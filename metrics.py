@@ -9,9 +9,9 @@ def accuracy(predictions, targets):
     predicted_label = torch.argmax(softmax(predictions), dim=1)
     return (predicted_label == torch.argmax(targets, dim=1)).sum()/len(targets)
 
-def nll(predictions, 
+def nll(predictions,
         targets,
-        loss,#=torch.nn.CrossEntropyLoss, 
+        loss=torch.nn.CrossEntropyLoss,
         weights=None,
         temperature=1.):
     if weights is None:

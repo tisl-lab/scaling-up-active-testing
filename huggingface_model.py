@@ -69,11 +69,17 @@ class HuggingfaceModel:
 
 
             if ('7b' in name or '13b' in name) or autolm:
-                self.model = AutoModelForCausalLM.from_pretrained(
-                    f"{base}/{name}", device_map="auto",
-                    max_memory={0: '80GIB'}, **kwargs,
-                    low_cpu_mem_usage=True,
-                    attn_implementation="sdpa")
+                if autolm:
+                    # 8-bit: omit device_map entirely; bitsandbytes places on GPU automatically
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        f"{base}/{name}", **kwargs,
+                        low_cpu_mem_usage=True)
+                else:
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        f"{base}/{name}", device_map="auto",
+                        max_memory={0: '80GIB'}, **kwargs,
+                        low_cpu_mem_usage=True,
+                        attn_implementation="sdpa")
 
             elif llama2_70b or llama65b:
                 path = snapshot_download(
@@ -84,7 +90,7 @@ class HuggingfaceModel:
                 config = AutoConfig.from_pretrained(f"{base}/{name}")
                 #config.load_in_8bit = True
                 with accelerate.init_empty_weights():
-                    self.model = AutoModelForCausalLM.from_config(config, torch_dtype=torch.float16, attn_implementation="flash_attention_2")
+                    self.model = AutoModelForCausalLM.from_config(config, torch_dtype=torch.float16)
                 self.model.tie_weights()
                 max_mem = 15 * 4686198491
 
@@ -101,10 +107,12 @@ class HuggingfaceModel:
 
                 # get snapshot folder
                 self.model = accelerate.load_checkpoint_and_dispatch(
-                    self.model, path, device_map=full_model_device_map,
+                    self.model,
+                    path,
+                    device_map="auto", 
                     dtype='float16',
-                    skip_keys='past_key_values',
-                    )
+                    skip_keys='past_key_values'
+                )
 
                 for i in self.model.named_parameters():
                     logging.info('%s -> %s', i[0], i[1].device)
