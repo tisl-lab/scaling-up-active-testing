@@ -7,6 +7,13 @@ import utils
 import seaborn.objects as so
 import metrics
 
+def _load_target(path, subset):
+    """Load target loss, falling back to active_set_loss if subset file missing."""
+    p = f'{path}{subset}_set_loss'
+    if not os.path.isfile(f'{p}.pt'):
+        p = f'{path}active_set_loss'
+    return utils.load_tensors(p).numpy()
+
 NAMES = {'llama2_7b': '7B-zero',
         'llama2_7b_icl5': '7B-few',
          'llama2_7b_icl10': '7B-few',
@@ -224,7 +231,7 @@ def plot_relative_cost(data,
         if data_row.loc['Dataset'] == 'fpb':
             target_error = utils.load_tensors(f'{path}active_set_loss').numpy()
         else:
-            target_error = utils.load_tensors(f'{path}{subset}_set_loss').numpy()
+            target_error = _load_target(path, subset)
         iid_error = utils.load_arrays(f"{path}{data_row.loc['Model']}_iid_loss{add}")
         predicted_error = utils.load_arrays(f"{data_row.loc['Dataset']}/{data_row.loc['Model']}/{data_row.loc['File']}{add}")
         if predicted_error.ndim < 2:
@@ -342,7 +349,7 @@ def plot_relative_error(data,
         if data_row.loc['Dataset'] == 'fpb':
             target_error = utils.load_tensors(f'{path}active_set_loss').numpy()
         else:
-            target_error = utils.load_tensors(f'{path}{subset}_set_loss').numpy()
+            target_error = _load_target(path, subset)
         iid_error = utils.load_arrays(f"{path}{data_row.loc['Model']}_iid_loss{add}")
         predicted_error = utils.load_arrays(f"{data_row.loc['Dataset']}/{data_row.loc['Model']}/{data_row.loc['File']}{add}")
         if predicted_error.ndim < 2:
@@ -469,7 +476,7 @@ def plot_relative_error_mmlu(data,
         path = f"{data_row.loc['Dataset']}/{data_row.loc['Model']}/"
         if not(os.path.isfile(f"{data_row.loc['Dataset']}/{data_row.loc['Model']}/{data_row.loc['File']}{add}.npy")):
             continue
-        target_error = utils.load_tensors(f'{path}{subset}_set_loss').numpy()
+        target_error = _load_target(path, subset)
         iid_error = utils.load_arrays(f"{path}{data_row.loc['Model']}_iid_loss{add}")
         predicted_error = utils.load_arrays(f"{data_row.loc['Dataset']}/{data_row.loc['Model']}/{data_row.loc['File']}{add}")
         if predicted_error.ndim < 2:
@@ -585,7 +592,7 @@ def plot_bootstrap_error_estimation(data,
         if data_row.loc['Dataset'] == 'fpb':
             target_error = utils.load_tensors(f'{path}active_set_loss').numpy()
         else:
-            target_error = utils.load_tensors(f'{path}{subset}_set_loss').numpy()
+            target_error = _load_target(path, subset)
         single_run_error = utils.load_arrays(f"{path}/{data_row.loc['File']}_at_loss{post}{add}")
         bootstrap_variance = utils.load_arrays(f"{path}/{data_row.loc['File']}_bootstrap_variance{post}{add}")
         bootstrap_variance = np.sqrt(bootstrap_variance)
@@ -664,7 +671,8 @@ def plot_comparison_errors(step,
     length = 1
     for i, model in enumerate(models):
         for j, dataset in enumerate(datasets):
-            target = utils.load_tensors(f"{dataset}/{model}/{set_name if (dataset != 'fpb') else 'active'}_set_loss").numpy()
+            _sn = set_name if (dataset != 'fpb') else 'active'
+            target = _load_target(f"{dataset}/{model}/", _sn)
             data = pd.DataFrame({})
             for method_name, file in files.items():
                 pred = utils.load_arrays(f"{dataset}/{model}/{model}_{file}")
@@ -756,7 +764,7 @@ def plot_bootstrap_mse(data,
         if data_row.loc['Dataset'] == 'fpb':
             target_error = utils.load_tensors(f'{path}active_set_loss').numpy()
         else:
-            target_error = utils.load_tensors(f'{path}{subset}_set_loss').numpy()
+            target_error = _load_target(path, subset)
         single_run_error = utils.load_arrays(f"{path}/{data_row.loc['File']}_at_loss{post}{add}")
         bootstrap_variance = utils.load_arrays(f"{path}/{data_row.loc['File']}_bootstrap_variance{post}{add}")
         true_error = metrics.se(single_run_error, target_error)
