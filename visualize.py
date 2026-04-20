@@ -281,7 +281,7 @@ def plot_relative_cost(data,
             axs[i].spines['right'].set_visible(False)
         handles, labels = axs[-1].get_legend_handles_labels()
         for ax in axs:
-            ax.get_legend().remove()
+            if ax.get_legend(): ax.get_legend().remove()
         splitting_index = labels.index('Surrogate')
         dataset_handles = handles[:splitting_index]
         surrogate_handles = handles[splitting_index:]
@@ -623,7 +623,7 @@ def plot_bootstrap_error_estimation(data,
             axs[i].axhline(y=0.95, xmin=0, xmax=axs[i].get_xlim()[1], linestyle='--', color='dimgray')
         handles, labels = axs[-1].get_legend_handles_labels()
         for ax in axs:
-            ax.get_legend().remove()
+            if ax.get_legend(): ax.get_legend().remove()
         splitting_index = labels.index('Surrogate')
         dataset_handles = handles[:splitting_index]
         surrogate_handles = handles[splitting_index:]
@@ -726,12 +726,12 @@ def plot_comparison_errors(step,
             handles, labels = axs[row, 0].get_legend_handles_labels()
             for col in range(rows):
                 axs[row, 0].set_ylabel(f'Risk-estimation error')
-                axs[row, col].get_legend().remove()
+                if axs[row, col].get_legend(): axs[row, col].get_legend().remove()
     else:
         axs[0].set_ylabel(f'Risk-estimation error')
         handles, labels = axs[0].get_legend_handles_labels()
         for ax in axs:
-            ax.get_legend().remove()
+            if ax.get_legend(): ax.get_legend().remove()
     fig.legend(handles, labels, loc='upper center', ncols=5)
     fig.tight_layout(rect=[0, 0, 0.98, 0.95])
     fig.suptitle(title)
