@@ -17,7 +17,7 @@ class BaseDataset:
         self.subsets = {}
         self.get_existing_subsets()
 
-    def select_icl_examples(self, nb_examples, version=0):
+    def select_icl_examples(self, nb_examples):
         indices = utils.load_tensors(f'{self.dataset_file}/icl_set_indices')
         selected = []
         for file in os.listdir(self.dataset_file):
@@ -32,9 +32,8 @@ class BaseDataset:
         selection = selection[~torch.isin(selection, selected)][:nb_examples]
         if len(selection) < nb_examples:
             print('Warning: not enough examples.')
-        v_format = f'_v{version}' if version > 0 else ''
-        utils.save_tensors(selection,
-                           f'{self.dataset_file}/icl{nb_examples}_selected_examples{v_format}',
+        utils.save_tensors(selection, 
+                           f'{self.dataset_file}/icl{nb_examples}_selected_examples', 
                            add_duplicates=True)
 
     def get_subset(self, set_name, dataset):

@@ -664,7 +664,7 @@ def plot_comparison_errors(step,
     length = 1
     for i, model in enumerate(models):
         for j, dataset in enumerate(datasets):
-            target = utils.load_tensors(f"{dataset}/{model}/{set_name if (dataset != 'fpb') else 'active'}_set_loss").numpy()
+            target = utils.load_tensors(f'{dataset}/{model}/{set_name if (dataset != 'fpb') else 'active'}_set_loss').numpy()
             data = pd.DataFrame({})
             for method_name, file in files.items():
                 pred = utils.load_arrays(f'{dataset}/{model}/{model}_{file}')
