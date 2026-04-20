@@ -90,7 +90,7 @@ class HuggingfaceModel:
                 config = AutoConfig.from_pretrained(f"{base}/{name}")
                 #config.load_in_8bit = True
                 with accelerate.init_empty_weights():
-                    self.model = AutoModelForCausalLM.from_config(config, torch_dtype=torch.float16, attn_implementation="flash_attention_2")
+                    self.model = AutoModelForCausalLM.from_config(config, torch_dtype=torch.float16, attn_implementation="sdpa")
                 self.model.tie_weights()
                 max_mem = 15 * 4686198491
 
