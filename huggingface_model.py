@@ -72,7 +72,6 @@ class HuggingfaceModel:
                 if autolm:
                     self.model = AutoModelForCausalLM.from_pretrained(
                         f"{base}/{name}", **kwargs,
-                        device_map="auto",
                         low_cpu_mem_usage=True)
                 else:
                     self.model = AutoModelForCausalLM.from_pretrained(
