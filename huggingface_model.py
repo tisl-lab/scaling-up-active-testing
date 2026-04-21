@@ -106,7 +106,7 @@ class HuggingfaceModel:
 
                 # get snapshot folder
                 self.model = accelerate.load_checkpoint_and_dispatch(
-                    self.model, path, device_map=full_model_device_map,
+                    self.model, path, device_map="auto",
                     dtype='float16',
                     skip_keys='past_key_values',
                     )
