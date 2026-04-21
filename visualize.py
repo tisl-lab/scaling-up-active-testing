@@ -685,6 +685,8 @@ def plot_comparison_errors(step,
                     ax = axs[i, j]
                 elif rows > 1:
                     ax = axs[i]
+                elif columns > 1:
+                    ax = axs[i]
                 else:
                     ax = axs[j]
                 if not(add_budget) or file == 'iid_loss' or "icl" in model:
@@ -727,6 +729,12 @@ def plot_comparison_errors(step,
             for col in range(rows):
                 axs[row, 0].set_ylabel(f'Risk-estimation error')
                 if axs[row, col].get_legend(): axs[row, col].get_legend().remove()
+    elif columns > 1:
+        for ax in axs:
+            ax.set_ylabel(f'Risk-estimation error')
+        handles, labels = axs[0].get_legend_handles_labels()
+        for ax in axs:
+            if ax.get_legend(): ax.get_legend().remove()
     else:
         axs[0].set_ylabel(f'Risk-estimation error')
         handles, labels = axs[0].get_legend_handles_labels()
