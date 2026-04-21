@@ -81,38 +81,12 @@ class HuggingfaceModel:
                         attn_implementation="sdpa")
 
             elif llama2_70b or llama65b:
-                path = snapshot_download(
-                    repo_id=f'{base}/{name}',
-                    allow_patterns=['*.json', '*.model', '*.safetensors'],
-                    ignore_patterns=['pytorch_model.bin.index.json']
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    f"{base}/{name}",
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                    low_cpu_mem_usage=True,
                 )
-                config = AutoConfig.from_pretrained(f"{base}/{name}")
-                #config.load_in_8bit = True
-                with accelerate.init_empty_weights():
-                    self.model = AutoModelForCausalLM.from_config(config, torch_dtype=torch.float16, attn_implementation="sdpa")
-                self.model.tie_weights()
-                max_mem = 15 * 4686198491
-
-                device_map = accelerate.infer_auto_device_map(
-                    self.model.model,
-                    max_memory={0: max_mem, 1: max_mem},
-                    dtype='float16',
-                    no_split_module_classes=['LlamaDecoderLayer']
-                )
-                device_map = remove_split_layer(device_map)
-                full_model_device_map = {
-                    f"model.{k}": v for k, v in device_map.items()}
-                full_model_device_map["lm_head"] = 0
-
-                # get snapshot folder
-                self.model = accelerate.load_checkpoint_and_dispatch(
-                    self.model, path, device_map="auto",
-                    dtype='float16',
-                    skip_keys='past_key_values',
-                    )
-
-                for i in self.model.named_parameters():
-                    logging.info('%s -> %s', i[0], i[1].device)
 
             else:
                 raise ValueError
