@@ -70,9 +70,9 @@ class HuggingfaceModel:
 
             if ('7b' in name or '13b' in name) or autolm:
                 if autolm:
-                    # 8-bit: omit device_map entirely; bitsandbytes places on GPU automatically
                     self.model = AutoModelForCausalLM.from_pretrained(
                         f"{base}/{name}", **kwargs,
+                        device_map="auto",
                         low_cpu_mem_usage=True)
                 else:
                     self.model = AutoModelForCausalLM.from_pretrained(
