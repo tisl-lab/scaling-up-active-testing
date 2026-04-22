@@ -667,7 +667,7 @@ def plot_comparison_errors(step,
                             add_budget=True):
     columns = len(models)
     rows = len(datasets)
-    fig, axs = plt.subplots(columns, rows, figsize=(rows*ratios[0], ratios[1]))
+    fig, axs = plt.subplots(rows, columns, figsize=(columns*ratios[0], rows*ratios[1]), squeeze=False)
     length = 1
     for i, model in enumerate(models):
         for j, dataset in enumerate(datasets):
@@ -681,14 +681,7 @@ def plot_comparison_errors(step,
                 mse_loss = metrics.se(pred, target)
                 runs = pred.shape[1]
                 length = len(mse_loss)
-                if rows > 1 and columns > 1:
-                    ax = axs[i, j]
-                elif rows > 1:
-                    ax = axs[i]
-                elif columns > 1:
-                    ax = axs[i]
-                else:
-                    ax = axs[j]
+                ax = axs[j, i]
                 if not(add_budget) or file == 'iid_loss' or "icl" in model:
                     if step==1:
                         iterations = np.repeat(np.arange(1, length+1), runs)
@@ -723,29 +716,16 @@ def plot_comparison_errors(step,
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
             ax.set_ylabel('')
-    if rows > 1:
-        for row, model in enumerate(models):
-            handles, labels = axs[row, 0].get_legend_handles_labels()
-            for col in range(rows):
-                axs[row, 0].set_ylabel(f'Risk-estimation error')
-                if axs[row, col].get_legend(): axs[row, col].get_legend().remove()
-    elif columns > 1:
-        for ax in axs:
-            ax.set_ylabel(f'Risk-estimation error')
-        handles, labels = axs[0].get_legend_handles_labels()
-        for ax in axs:
-            if ax.get_legend(): ax.get_legend().remove()
-    else:
-        axs[0].set_ylabel(f'Risk-estimation error')
-        handles, labels = axs[0].get_legend_handles_labels()
-        for ax in axs:
-            if ax.get_legend(): ax.get_legend().remove()
-    fig.legend(handles, labels, loc='upper center', ncols=5)
-    fig.tight_layout(rect=[0, 0, 0.98, 0.95])
+    for ax in axs.flatten():
+        if ax.get_legend(): ax.get_legend().remove()
+    axs[0, 0].set_ylabel('Risk-estimation error')
+    handles, labels = axs[-1, -1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncols=5, bbox_to_anchor=(0.5, 1.12))
+    fig.tight_layout()
     fig.suptitle(title)
-    
+
     if savefig[0]:
-        plt.savefig(savefig[1])
+        plt.savefig(savefig[1], bbox_inches='tight')
 
 def plot_bootstrap_mse(data,
                     title='',
@@ -788,33 +768,35 @@ def plot_bootstrap_mse(data,
                                 'Median relative error': mse,
                                 'Coverage probability': in_interval,
                             })))
+    if df.empty:
+        print('[plot_bootstrap_mse] no bootstrap files found — skipping')
+        return
+    n_datasets = len(df.groupby('Dataset'))
     palette = sns.color_palette("tab10", n_colors=4)
-    fig, axs = plt.subplots(2, len(df.groupby('Dataset')), figsize=(5.6, 2.7), layout="tight")
+    fig, axs = plt.subplots(n_datasets, 2, figsize=(5.6, 1.5 * n_datasets), layout="tight", squeeze=False)
     for j, (dataset, df_) in enumerate(df.groupby(['Dataset'])):
             sns.lineplot(df_, style='Surrogate', y='Median relative error', x='Number of acquired labels',
                         hue='Target model', palette=palette,
-                        ax=axs[0, j])
-            axs[0, j].set_title(f'{dataset[0]}')
-            axs[0, j].set_yscale('log')
+                        ax=axs[j, 0])
+            axs[j, 0].set_title(f'{dataset[0]} — MSE')
+            axs[j, 0].set_yscale('log')
             if xlim:
-                axs[0, j].set_xlim(0, xlim)
-            axs[0, j].set_ylabel('')
-            axs[0, j].spines['top'].set_visible(False)
-            axs[0, j].spines['right'].set_visible(False)
+                axs[j, 0].set_xlim(0, xlim)
+            axs[j, 0].set_ylabel('MSE-estimation error')
+            axs[j, 0].spines['top'].set_visible(False)
+            axs[j, 0].spines['right'].set_visible(False)
 
             sns.lineplot(df_, style='Surrogate', y='Coverage probability', x='Number of acquired labels',
                     hue='Target model', palette=palette,
-                    ax=axs[1, j])
-            axs[1, j].set_ylabel('')
-            axs[1, j].set_title(f'{dataset[0]}')
-            axs[1, j].set_ylim(-0.05, 1.)
+                    ax=axs[j, 1])
+            axs[j, 1].set_ylabel('Coverage probability')
+            axs[j, 1].set_title(f'{dataset[0]} — Coverage')
+            axs[j, 1].set_ylim(-0.05, 1.)
             if xlim:
-                axs[1, j].set_xlim(0, xlim)
-            axs[1, j].spines['top'].set_visible(False)
-            axs[1, j].spines['right'].set_visible(False)
-            axs[1, j].axhline(y=0.95, xmin=0, xmax=axs[1, j].get_xlim()[1], linestyle='--', color='dimgray')
-    axs[1, 0].set_ylabel('Coverage probability')
-    axs[0, 0].set_ylabel('MSE-estimation error')
+                axs[j, 1].set_xlim(0, xlim)
+            axs[j, 1].spines['top'].set_visible(False)
+            axs[j, 1].spines['right'].set_visible(False)
+            axs[j, 1].axhline(y=0.95, xmin=0, xmax=axs[j, 1].get_xlim()[1], linestyle='--', color='dimgray')
     handles, labels = axs[-1, -1].get_legend_handles_labels()
     for ax in axs.flatten():
         ax.get_legend().remove()

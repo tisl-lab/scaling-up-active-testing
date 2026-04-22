@@ -1,6 +1,25 @@
+import glob
 import os
 import torch
 import numpy as np
+
+RESOLVE_LATEST = False  # set to False to always load base files (no _vN resolution)
+
+
+def _resolve_latest(filename, ext):
+    """Return filename (no ext) for the highest-version _vN variant, or base if none."""
+    if not RESOLVE_LATEST:
+        return filename
+    pattern = f'{filename}_v*.{ext}'
+    versions = glob.glob(pattern)
+    if not versions:
+        return filename
+    def _ver(p):
+        try:
+            return int(os.path.splitext(p)[0].rsplit('_v', 1)[1])
+        except (IndexError, ValueError):
+            return -1
+    return max(versions, key=_ver).removesuffix(f'.{ext}')
 
 def save_tensor_(result, filename, i=0, add_duplicates=False):
     if add_duplicates:
@@ -43,10 +62,10 @@ def load_tensors(filenames):
     if isinstance(filenames, list):
         results = []
         for filename in filenames:
-            results.append(torch.load(f'{filename}.pt', weights_only=True))
+            results.append(torch.load(f'{_resolve_latest(filename, "pt")}.pt', weights_only=True))
         return tuple(results)
     else:
-        return torch.load(f'{filenames}.pt', weights_only=True)
+        return torch.load(f'{_resolve_latest(filenames, "pt")}.pt', weights_only=True)
 
 def save_arrays(results, filenames, add_duplicates=False):
     if isinstance(results, list):
@@ -59,10 +78,10 @@ def load_arrays(filenames):
     if isinstance(filenames, list):
         results = []
         for filename in filenames:
-            results.append(np.load(f'{filename}.npy'))
+            results.append(np.load(f'{_resolve_latest(filename, "npy")}.npy'))
         return tuple(results)
     else:
-        return np.load(f'{filenames}.npy')
+        return np.load(f'{_resolve_latest(filenames, "npy")}.npy')
 
 def clear_files(filenames):
     if isinstance(filenames, list):
